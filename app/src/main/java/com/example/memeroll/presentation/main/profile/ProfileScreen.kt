@@ -1,6 +1,11 @@
 package com.example.memeroll.presentation.main.profile
 
 import android.R.attr.padding
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -45,13 +50,28 @@ import com.example.memeroll.ui.theme.MemeRollTheme
 fun ProfileScreen(
     state: ProfileState,
     onEvent: (ProfileEvent) -> Unit,
+    navigateToPostMeme:(Uri) -> Unit
 ) {
+
+    val pickMedia = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
+        if (uri != null) {
+            Log.d("PhotoPicker", "Selected URI: $uri")
+            navigateToPostMeme(uri)
+        } else {
+            Log.d("PhotoPicker", "No media selected")
+        }
+    }
+
 
     Scaffold(
         topBar = { ProfileTopBar() },
+
         floatingActionButton = {
-            FloatingActionButton(onClick = {}, shape = CircleShape) { Icon(Icons.Default.Add, contentDescription = null,)}
+            FloatingActionButton(
+                onClick = { pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
+                shape = CircleShape) { Icon(Icons.Default.Add, contentDescription = null,)}
         },
+
         floatingActionButtonPosition = FabPosition.End
     ){ padding ->
 
@@ -101,7 +121,8 @@ fun ProfilePreview() {
     MemeRollTheme {
         ProfileScreen(
             state = ProfileState(userName = "Vishesh"),
-            onEvent = {}
+            onEvent = {},
+            navigateToPostMeme = {}
         )
     }
 }

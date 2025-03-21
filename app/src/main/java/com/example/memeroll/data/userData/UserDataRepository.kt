@@ -46,16 +46,21 @@ class UserDataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addUserPost(userId: String, postId: Int) {
-        val memeIds = getUserById(userId).posts ?: emptyList<Int>()
-        memeIds.toMutableList().add(postId)
-        database.from("users_table").update(
-            {
-                set("user_posts", memeIds)
+        val memeIds = (getUserById(userId).posts ?: emptyList<Int>()).toMutableList()
+        memeIds.add(postId)
+        try {
+            database.from("users_table").update(
+                {
+                    set("user_posts", memeIds)
+                }
+            ){
+                filter {
+                    eq("user_id", userId)
+                }
             }
-        ){
-            filter {
-               eq("user_id", userId)
-            }
+        }catch (e: Exception){
+            Log.d("UserRepo", "Cant add post to User: $e")
         }
+
     }
 }

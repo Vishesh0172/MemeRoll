@@ -1,5 +1,6 @@
 package com.example.memeroll.presentation.navigation
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -19,8 +20,12 @@ import com.example.memeroll.presentation.auth.signUp.SignUpScreen
 import com.example.memeroll.presentation.auth.signUp.SignUpViewModel
 import com.example.memeroll.presentation.main.feed.FeedScreen
 import com.example.memeroll.presentation.main.feed.FeedViewModel
+import com.example.memeroll.presentation.main.post.PostScreen
+import com.example.memeroll.presentation.main.post.PostState
+import com.example.memeroll.presentation.main.post.PostViewModel
 import com.example.memeroll.presentation.main.profile.ProfileScreen
 import com.example.memeroll.presentation.main.profile.ProfileViewModel
+import kotlinx.serialization.Serializable
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues) {
@@ -93,10 +98,27 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
             composable("ProfileRoute"){
                 val viewModel = hiltViewModel<ProfileViewModel>()
                 val state by viewModel.state.collectAsStateWithLifecycle()
-                ProfileScreen(state = state) { }
+                ProfileScreen(
+                    state = state,
+                    navigateToPostMeme = { navController.navigate(PostRoute(it.toString())) },
+                    onEvent = viewModel::onEvent
+                )
+            }
+
+            composable<PostRoute>{
+                val viewModel = hiltViewModel<PostViewModel>()
+                val state by viewModel.state.collectAsStateWithLifecycle()
+                PostScreen(
+                    modifier = Modifier.padding(scaffoldPadding),
+                    state = state,
+                    onEvent = viewModel::onEvent
+                )
             }
 
 
         }
     }
 }
+
+@Serializable
+data class PostRoute(val uriString: String)

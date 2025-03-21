@@ -2,6 +2,7 @@ package com.example.memeroll.di
 
 import com.example.memeroll.authentication.AuthRepositoryImpl
 import com.example.memeroll.data.FeedDatabaseRepositoryImpl
+import com.example.memeroll.data.StorageRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -70,6 +71,12 @@ object SupabaseModule {
     @Singleton
     fun provideSupabaseFeedRepository(postgrest: Postgrest): FeedDatabaseRepositoryImpl {
         return FeedDatabaseRepositoryImpl(postgrest)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseStorageRepository(storage: Storage): StorageRepositoryImpl {
+        return StorageRepositoryImpl(storage)
     }
 
 
