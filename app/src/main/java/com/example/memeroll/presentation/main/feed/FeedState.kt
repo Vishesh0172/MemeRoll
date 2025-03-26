@@ -6,5 +6,5 @@ import io.github.jan.supabase.auth.status.SessionStatus
 
 data class FeedState(
     val sessionStatus: SessionStatus = SessionStatus.Initializing,
-    val memeList: List<MemeDTO> = emptyList()
+    val memeMap: Map<MemeDTO, Boolean> = mapOf()
 )

@@ -3,6 +3,7 @@ package com.example.memeroll.presentation.auth.signUp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memeroll.authentication.AuthRepositoryImpl
+import com.example.memeroll.data.userData.UserDataRepositoryImpl
 import com.example.memeroll.model.UserDTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.postgrest.Postgrest
@@ -15,7 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
     private val authRepository: AuthRepositoryImpl,
-    private val database: Postgrest
+    private val userRepository: UserDataRepositoryImpl
 ) : ViewModel(){
 
     private val _state = MutableStateFlow(SignUpState())
@@ -45,17 +46,8 @@ class SignUpViewModel @Inject constructor(
             SignUpEvent.SignUpClick -> {
                 viewModelScope.launch{
                     if (authRepository.signUp(state.value.email, state.value.password, state.value.name)){
-                        val currentUser = authRepository.getCurrentUser()!!
-                        database.from("users_table").insert(
-                            UserDTO(
-                                userId = currentUser.id,
-                                userName = state.value.name,
-                                posts = emptyList<Int>()
-                            ),
-                            {
-                                defaultToNull = false
-                            }
-                        )
+                        val currentUserId = authRepository.getCurrentUser()!!.id
+                        userRepository.createUser(state.value.name, currentUserId)
                     }
                 }
             }

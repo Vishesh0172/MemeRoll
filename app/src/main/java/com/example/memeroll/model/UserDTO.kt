@@ -13,6 +13,9 @@ data class UserDTO(
     val userName: String = "",
 
     @SerialName("user_posts")
-    val posts: List<Int>? = emptyList<Int>()
+    val posts: List<Int>? = emptyList<Int>(),
+
+    @SerialName("liked_memes")
+    val likedPosts: List<Int>? = emptyList<Int>()
 
 )

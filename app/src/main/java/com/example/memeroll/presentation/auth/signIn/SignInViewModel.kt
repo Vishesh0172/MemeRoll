@@ -5,11 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memeroll.authentication.AuthRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,10 +22,16 @@ class SignInViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     init {
-        Log.d("Authentication", authRepository.toString())
+
+        Log.d("SignInViewModel", "init called")
+        //Log.d("Authentication", authRepository.toString())
+
         viewModelScope.launch{
-            authRepository.isAuthenticated().collect{ sessionStatus ->
-                _state.update { it.copy(sessionStatus = sessionStatus) }
+
+            withContext(Dispatchers.IO) {
+                authRepository.isAuthenticated().collect { sessionStatus ->
+                    _state.update { it.copy(sessionStatus = sessionStatus) }
+                }
             }
         }
     }

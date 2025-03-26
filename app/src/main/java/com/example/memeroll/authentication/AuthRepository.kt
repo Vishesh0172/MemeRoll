@@ -1,15 +1,11 @@
 package com.example.memeroll.authentication
 
 import android.util.Log
-import com.example.memeroll.model.UserDTO
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
-import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface AuthRepository {
@@ -58,22 +54,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun isAuthenticated(): Flow<SessionStatus> {
 
         return auth.sessionStatus
-        /*
-        return auth.sessionStatus.map{
-            when(it) {
-                is SessionStatus.Authenticated -> {
-                    Log.d("Authentication", "Session status Authenticated")
-                    true
-                }
 
-                else -> {
-                    Log.d("Authentication", "$it")
-                    false
-                }
-            }
-
-        }
-         */
     }
 
     override suspend fun signOut(){

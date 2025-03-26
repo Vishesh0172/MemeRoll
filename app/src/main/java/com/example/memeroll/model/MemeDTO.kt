@@ -6,11 +6,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MemeDTO(
 
+    @SerialName("id")
+    val id: Int? = null,
+
     @SerialName("img_url")
     val imgUrl: String = "",
 
     @SerialName("like_count")
-    val likeCount: Double = 0.0,
+    var likeCount: Double = 0.0,
 
     @SerialName("user_name")
     val userName: String = ""
