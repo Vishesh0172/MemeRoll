@@ -8,9 +8,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,15 +24,13 @@ class SignInViewModel @Inject constructor(
     init {
 
         Log.d("SignInViewModel", "init called")
-        //Log.d("Authentication", authRepository.toString())
 
         viewModelScope.launch{
-
-            withContext(Dispatchers.IO) {
-                authRepository.isAuthenticated().collect { sessionStatus ->
+                authRepository.isAuthenticated()
+                    .flowOn(Dispatchers.IO)
+                    .collect { sessionStatus ->
                     _state.update { it.copy(sessionStatus = sessionStatus) }
                 }
-            }
         }
     }
 

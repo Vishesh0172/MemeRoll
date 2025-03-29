@@ -1,11 +1,9 @@
 package com.example.memeroll.data.userData
 
 import android.util.Log
-import com.example.memeroll.data.FeedDatabaseRepositoryImpl
 import com.example.memeroll.model.MemeDTO
 import com.example.memeroll.model.UserDTO
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.query.Columns
 import javax.inject.Inject
 
 
@@ -14,6 +12,7 @@ interface UserDataRepository{
     suspend fun getUserById(id: String): UserDTO
     suspend fun getUserPosts(memeIds: List<Int>): List<MemeDTO>
     suspend fun addUserPost(userId: String, postId: Int)
+    suspend fun deleteUserPost(userId: String, postId: Int): Boolean
     suspend fun addToLikedPosts(postId: Int, userId: String)
     suspend fun removeFromLikedPosts(postId: Int, userId: String)
     suspend fun checkIfLiked(postId: Int, userId: String): Boolean
@@ -78,6 +77,27 @@ class UserDataRepositoryImpl @Inject constructor(
             Log.d("UserRepository", "Cant add post to User: $e")
         }
 
+    }
+
+    override suspend fun deleteUserPost(userId: String, postId: Int): Boolean {
+        return try {
+            val memeIds = (getUserById(userId).posts ?: emptyList<Int>()).toMutableList()
+            memeIds.remove(postId)
+            database.from("users_table").update(
+                {
+                    set("user_posts", memeIds)
+                }
+            ){
+                filter {
+                    eq("user_id", userId)
+                }
+            }
+            Log.d("UserRepository", "Post removed from User")
+            true
+        }catch (e: Exception){
+            Log.d("UserRepository", "Cant remove post from User! : $e")
+            false
+        }
     }
 
     override suspend fun addToLikedPosts(postId: Int, userId: String) {

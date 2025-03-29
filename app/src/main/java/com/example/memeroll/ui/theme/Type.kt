@@ -15,9 +15,17 @@ val boldonseFamily = FontFamily(
         R.font.boldonse_regular,
     )
 )
+
+val ubuntuFamily = FontFamily(
+    Font(
+        R.font.ubuntu_regular,
+    )
+)
+
+
 val Typography = Typography(
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = ubuntuFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,

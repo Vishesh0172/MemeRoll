@@ -4,53 +4,54 @@ import android.util.Log
 import com.example.memeroll.model.MemeDTO
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 interface FeedDatabaseRepository {
     suspend fun getLikesById(postId: Int): Double
-    suspend fun getFeedMemes(from: Long): List<MemeDTO>
+    suspend fun getFeedMeme(from: Long): List<MemeDTO>?
     suspend fun getMemeById(id: Int): MemeDTO
     suspend fun likeMeme(postId: Int)
     suspend fun unlikeMeme(postId: Int)
     suspend fun addMeme(meme: MemeDTO): Int?
+    suspend fun deleteMeme(memeId: Int): Boolean
     suspend fun getMemesByIds(idList: List<Int>): Flow<List<MemeDTO>>
 }
 
     class FeedDatabaseRepositoryImpl @Inject constructor(
         private val database: Postgrest
     ) : FeedDatabaseRepository {
+
         override suspend fun getLikesById(postId: Int): Double {
             return getMemeById(postId).likeCount
         }
 
-        override suspend fun getFeedMemes(from: Long): List<MemeDTO> {
+        override suspend fun getFeedMeme(from: Long): List<MemeDTO>? {
             return try {
                 val list = database.from("feed_table").select() {
-                    range(from = from, to = from + 10)
+                    range(from = from, to = from)
 
                 }.decodeList<MemeDTO>()
                 Log.d("MemeList", list.toString())
                 list
             } catch (e: Exception) {
                 Log.d("FeedRepository", "Exception: $e")
-                emptyList<MemeDTO>()
+                null
             }
         }
 
         override suspend fun getMemeById(id: Int): MemeDTO {
-            return database.from("feed_table").select {
-                filter {
-                    eq("id", id)
-                }
-            }.decodeSingle<MemeDTO>()
+            return try {
+                database.from("feed_table").select {
+                    filter {
+                        eq("id", id)
+                    }
+                }.decodeSingle<MemeDTO>()
+            }catch (e: Exception){
+                Log.d("FeedRepository","Couldn't fetch meme by Id: $e")
+                MemeDTO()
+            }
         }
 
         override suspend fun likeMeme(postId: Int) {
@@ -103,6 +104,19 @@ interface FeedDatabaseRepository {
             }
         }
 
+        override suspend fun deleteMeme(memeId: Int): Boolean {
+           return try {
+               database.from("feed_table").delete{
+                   filter { eq("id", memeId) }
+               }
+               Log.d("FeedRepository", "Removed meme $memeId from Feed")
+               true
+           }catch (e: Exception){
+               Log.d("FeedRepository", "Couldn't remove meme of Id $memeId from Feed: $e")
+               false
+           }
+        }
+
 
         override suspend fun getMemesByIds(idList: List<Int>): Flow<List<MemeDTO>> {
 
@@ -113,15 +127,14 @@ interface FeedDatabaseRepository {
 
             return flow<List<MemeDTO>> {
 
-                while (tempIndex < idList.size){
+                while (tempIndex < idList.size) {
 
-                    for ( i in tempIndex..tempIndex + 10){
+                    for (i in tempIndex..tempIndex + 10) {
 
-                        if (i<idList.size) {
+                        if (i < idList.size) {
                             val meme = getMemeById(idList[i])
-
                             memeList.add(meme)
-                        }else{
+                        } else {
                             break
                         }
                     }
@@ -134,10 +147,6 @@ interface FeedDatabaseRepository {
 
             }
 
-            //Log.d("ProfileFunctions", "Meme of id $id fetched and converted to MemeObject: $meme")
-
         }
 
-
     }
-

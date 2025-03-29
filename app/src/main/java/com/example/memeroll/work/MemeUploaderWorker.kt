@@ -51,7 +51,8 @@ class MemeUploaderWorker @AssistedInject constructor(
 
         return Result.success(workDataOf(
             "RESULT_STATUS" to "SUCCESS",
-            "URI" to stringUri
+            "URI" to stringUri,
+            "POST_ID" to postId
         ))
 
     }

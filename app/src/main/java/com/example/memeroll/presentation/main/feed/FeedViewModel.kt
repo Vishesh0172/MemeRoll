@@ -1,4 +1,5 @@
-package com.example.memeroll.presentation.main.feed 
+package com.example.memeroll.presentation.main.feed
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,6 +9,7 @@ import com.example.memeroll.data.userData.UserDataRepositoryImpl
 import com.example.memeroll.model.MemeDTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,35 +23,30 @@ class FeedViewModel @Inject constructor(
     private val feedRepository: FeedDatabaseRepositoryImpl,
     private val authRepository: AuthRepositoryImpl,
     private val userRepository: UserDataRepositoryImpl
-) : ViewModel(){
+) : ViewModel() {
 
     private val _state = MutableStateFlow(FeedState())
     val state = _state.asStateFlow()
-    private lateinit var userId : String
+    private lateinit var userId: String
+    private lateinit var likedPostsIds: List<Int>
 
 
     init {
 
         Log.d("FeedViewModel", "init called")
 
-        viewModelScope.launch{
+        viewModelScope.launch {
 
-//            launch{
-//                authRepository.isAuthenticated()
-//                    .flowOn(Dispatchers.IO)
-//                    .collect{ sessionStatus ->
-//                    Log.d("Authenticated", sessionStatus.toString())
-//                    _state.update { it.copy(sessionStatus = sessionStatus) }
-//                }
-//            }
-
-            val user = withContext(Dispatchers.IO){
+            val user = withContext(Dispatchers.IO) {
                 authRepository.getCurrentUser()
             }
 
             user?.let {
-                userId  = it.id
-                val memeMap = withContext(Dispatchers.IO){ getMemeMap(0) }
+                userId = it.id
+                likedPostsIds = withContext(Dispatchers.IO) {
+                    userRepository.getUserById(it.id).likedPosts ?: emptyList()
+                }
+                val memeMap = withContext(Dispatchers.IO) { getMemeMap(0) }
                 _state.update { it.copy(memeMap = memeMap) }
 
             }
@@ -57,66 +54,83 @@ class FeedViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: FeedEvent){
-        Log.d("FeedViewModel", "Event Received: $event")
-        when(event) {
 
-            is FeedEvent.Liked -> {
-                viewModelScope.launch {
-                    Log.d("FeedViewModel", "onEvent for Like Clicked called")
-                    feedRepository.likeMeme(postId = event.postId)
-                    userRepository.addToLikedPosts(postId = event.postId, userId = userId)
-                    val memeMap = state.value.memeMap.toMutableMap()
-                    val meme = memeMap.keys.find { it.id == event.postId }!!
-                    meme.likeCount = meme.likeCount + 1L
-                    Log.d("FeedViewModel", meme.likeCount.toString())
-                    memeMap[meme] = true
-                    _state.update { it.copy(
-                        memeMap = memeMap
-                    ) }
+    fun onEvent(event: FeedEvent) {
+
+        viewModelScope.launch {
+            when (event) {
+                is FeedEvent.Liked -> {
+
+                    async(Dispatchers.IO) { feedRepository.likeMeme(postId = event.postId) }
+                    async(Dispatchers.IO) { userRepository.addToLikedPosts(postId = event.postId, userId = userId) }
+
+                    val updateMemeMap = getUpdatedMemeMap(event.postId, liked = true)
+                    _state.update { it.copy(memeMap = updateMemeMap) }
+
                 }
-            }
 
-            is FeedEvent.Unliked -> {
-                viewModelScope.launch {
-                    Log.d("FeedViewModel", "onEvent for Unliked called")
-                    feedRepository.unlikeMeme(postId = event.postId)
-                    userRepository.removeFromLikedPosts(postId = event.postId, userId = userId)
-                    val memeMap = state.value.memeMap.toMutableMap()
-                    val meme = memeMap.keys.find { it.id == event.postId }!!
-                    meme.likeCount = meme.likeCount - 1L
-                    Log.d("FeedViewModel", meme.likeCount.toString())
-                    memeMap[meme] = false
-                    _state.update { it.copy(
-                        memeMap = memeMap
-                    ) }
+                is FeedEvent.Unliked -> {
+
+
+                    async(Dispatchers.IO) { feedRepository.unlikeMeme(postId = event.postId) }
+                    async(Dispatchers.IO) { userRepository.removeFromLikedPosts(postId = event.postId, userId = userId) }
+
+                    val updateMemeMap = getUpdatedMemeMap(event.postId, liked = false)
+                    _state.update { it.copy(memeMap = updateMemeMap) }
+
                 }
-            }
 
+                is FeedEvent.LimitReached -> {
 
-
-            is FeedEvent.LimitReached -> {
-                viewModelScope.launch{
-                    Log.d("FeedViewModel", "onEvent for LimitReached called")
+                    Log.d("FeedViewModel","Limit Reached Called")
                     val memeMap = state.value.memeMap.toMutableMap()
-                    val memesFromNetwork = withContext(Dispatchers.IO){ getMemeMap(from = event.pageNumber.toLong() + 1L) }
+                    val memesFromNetwork =
+                        withContext(Dispatchers.IO) { getMemeMap(from = event.pageNumber.toLong() + 1L) }
                     memeMap.putAll(memesFromNetwork)
                     _state.update { it.copy(memeMap = memeMap) }
+
                 }
 
+
             }
-
-
         }
     }
 
-    private suspend fun getMemeMap(from: Long): Map<MemeDTO, Boolean>{
+
+    private fun getUpdatedMemeMap(postId: Int, liked: Boolean): Map<MemeDTO, Boolean> {
+
+        val memeMap = state.value.memeMap.toMutableMap()
+        val meme = memeMap.keys.find { it.id == postId }
+
+        meme?.let {
+
+            val newMeme = it.copy()
+            if (liked)
+                meme.likeCount = meme.likeCount + 1L
+            else
+                meme.likeCount = meme.likeCount - 1L
+
+            memeMap[meme] = liked
+        }
+
+        return memeMap.toMap()
+    }
+
+
+    private suspend fun getMemeMap(from: Long): Map<MemeDTO, Boolean> {
 
         val memeMap = mutableMapOf<MemeDTO, Boolean>()
-        val memeList = feedRepository.getFeedMemes(from = from)
-        for (meme in memeList){
-            val liked = userRepository.checkIfLiked(meme.id!!, userId)
-            memeMap.put(meme, liked)
+
+        val meme = feedRepository.getFeedMeme(from = from)?.let {
+            if (it.isNotEmpty())
+                it.first()
+            else
+                null
+        }
+
+        meme?.let {
+            val liked = it.id in likedPostsIds
+            memeMap.put(it, liked)
         }
         return memeMap
     }

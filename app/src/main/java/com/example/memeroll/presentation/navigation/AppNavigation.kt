@@ -50,7 +50,7 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
                     state = state,
                     authComplete = {
                         navController.navigate(route = "MainNavigation"){
-                           popUpTo("AuthNavigation")
+                           popUpTo("AuthNavigation"){inclusive = true}
                         }
                         Log.d("Authentication", "Sign In Complete")
                     },

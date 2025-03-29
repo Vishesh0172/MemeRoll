@@ -34,13 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.memeroll.model.MemeDTO
+import com.example.memeroll.presentation.main.components.DefaultProfilePicture
 import com.example.memeroll.presentation.main.feed.FeedEvent.*
 import java.util.Locale
 
@@ -56,7 +56,7 @@ fun FeedScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
 
-        val pagerState = rememberPagerState { state.memeMap.size }
+        val pagerState = rememberPagerState { state.memeMap.keys.size }
         VerticalPager(
             state = pagerState,
         ) { index ->
@@ -66,16 +66,15 @@ fun FeedScreen(
                 MemeComposable(meme = meme, onEvent = onEvent, liked = state.memeMap.getValue(meme))
             }
             else{
-                MemeComposable(meme = meme, onEvent = onEvent, liked = state.memeMap.getValue(meme))
                 onEvent(LimitReached(index))
+                MemeComposable(meme = meme, onEvent = onEvent, liked = state.memeMap.getValue(meme))
            }
         }
 
         Text(text = "MemeRoll", modifier = Modifier.align(Alignment.TopStart).padding(start = 10.dp, top = 10.dp), style = MaterialTheme.typography.displayMedium)
-        IconButton(onClick = {navigateToProfile()}, modifier = Modifier.align(Alignment.TopEnd).padding(15.dp)) {
+        IconButton(onClick = {navigateToProfile()}, modifier = Modifier.align(Alignment.TopEnd).padding(start = 10.dp, top = 10.dp)) {
             Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
         }
-
 
     }
 }
@@ -134,20 +133,20 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
         }
 
         Column(
-            modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 22.dp, start = 10.dp),
+            modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 27.dp, start = 13.dp),
         ) {
-            Text(text = "Posted by", fontStyle = FontStyle.Italic, fontSize = 10.sp)
+            Text(text = "Posted by", fontSize = 10.sp)
 
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
+                DefaultProfilePicture(
+                    modifier = Modifier.size(30.dp),
+                    userName = meme.userName,
+                    textSize = 20.sp
                 )
 
-                Text(text = meme.userName)
+                Text(text = meme.userName, modifier = Modifier.padding(start = 5.dp))
 
             }
         }

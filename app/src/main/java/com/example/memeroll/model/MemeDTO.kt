@@ -16,5 +16,7 @@ data class MemeDTO(
     var likeCount: Double = 0.0,
 
     @SerialName("user_name")
-    val userName: String = ""
+    val userName: String = "",
+
+    val liked: Boolean = false
 )
