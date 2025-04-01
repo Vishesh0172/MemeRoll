@@ -11,4 +11,5 @@ sealed interface SharedEvent {
     data class CancelUpload(val workId: UUID): SharedEvent
     data class DeleteMeme(val memeId: Int, val url: String): SharedEvent
     data class ShowMeme(val meme: MemeDTO): SharedEvent
+    data class ChangeType(val type: SelectedType): SharedEvent
 }

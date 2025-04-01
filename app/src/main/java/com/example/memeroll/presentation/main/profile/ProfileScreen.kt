@@ -80,6 +80,7 @@ import coil3.size.Scale
 import com.example.memeroll.R
 import com.example.memeroll.model.MemeDTO
 import com.example.memeroll.presentation.main.components.DefaultProfilePicture
+import com.example.memeroll.presentation.main.shared.SelectedType
 import com.example.memeroll.presentation.main.shared.SharedEvent
 import com.example.memeroll.presentation.main.shared.SharedState
 import com.example.memeroll.presentation.main.shared.UploadingMeme
@@ -114,6 +115,8 @@ fun ProfileScreen(
             navigateToAuth()
     }
 
+    val selectedType = sharedState.selectedType
+
 
     Scaffold(
         topBar = { ProfileTopBar(onProfileEvent = onProfileEvent) },
@@ -136,13 +139,17 @@ fun ProfileScreen(
         ) {
 
             UserPostsGrid(
-                list = sharedState.userPosts,
+                list = if (selectedType == SelectedType.POSTS ) sharedState.userPosts else sharedState.likedPosts,
                 userName = sharedState.userName,
                 numberOfPosts = sharedState.numberOfPosts,
                 onMemeClicked = {
                     onSharedEvent(SharedEvent.ShowMeme(it))
                     showFullMeme = true
-                }
+                },
+                changeType = {
+                    onSharedEvent(SharedEvent.ChangeType(it))
+                },
+                selectedTypeName = sharedState.selectedType.typeName
             )
 
             UploadingMemesList(
@@ -201,13 +208,15 @@ fun UserPostsGrid(
     list: List<MemeDTO>,
     userName: String,
     numberOfPosts: Int,
-    onMemeClicked: (MemeDTO) -> Unit
+    onMemeClicked: (MemeDTO) -> Unit,
+    changeType: (SelectedType) -> Unit,
+    selectedTypeName: String
 ) {
 
     LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = modifier.fillMaxSize()) {
 
         header {
-            ProfileHeader(userName = userName, numberOfPosts = numberOfPosts)
+            ProfileHeader(userName = userName, numberOfPosts = numberOfPosts, changeType = changeType, selectedTypeName = selectedTypeName)
         }
 
         items(list) {
@@ -231,7 +240,7 @@ fun UserPostsGrid(
 }
 
 @Composable
-fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts: Int) {
+fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts: Int, changeType:(SelectedType) -> Unit, selectedTypeName: String) {
 
     var showMenu by remember { mutableStateOf(false) }
     Column(
@@ -271,7 +280,7 @@ fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Posts")
+                Text(selectedTypeName)
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
@@ -286,8 +295,20 @@ fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts
 
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
 
-            DropdownMenuItem(text = { Text("Posts") }, onClick = { showMenu = false })
-            DropdownMenuItem(text = { Text("Favorites") }, onClick = { showMenu = false })
+            DropdownMenuItem(
+                text = { Text("Posts") },
+                onClick = {
+                    showMenu = false
+                    changeType(SelectedType.POSTS)
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Favorites") },
+                onClick = {
+                    showMenu = false
+                    changeType(SelectedType.FAVORITES)
+                }
+            )
 
         }
     }

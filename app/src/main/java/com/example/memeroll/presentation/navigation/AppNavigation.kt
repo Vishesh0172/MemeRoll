@@ -41,6 +41,7 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
 
         navigation(route = "AuthNavigation", startDestination = "SignInRoute"){
 
+
             composable(route = "SignInRoute"){
                 val viewModel = hiltViewModel<SignInViewModel>()
                 val state  by viewModel.state.collectAsStateWithLifecycle()

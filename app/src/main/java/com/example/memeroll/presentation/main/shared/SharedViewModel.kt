@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -70,23 +71,39 @@ class SharedViewModel @Inject constructor(
                     userRepository.getUserById(it.id)
                 }
             }
-
             val myUser = userDeferred.await()
 
             myUser?.let {
+
+                // Updating state with user
                 user = it
                 val userPosts = user.posts ?: emptyList<Int>()
+                val userLikedPosts = user.likedPosts ?: emptyList<Int>()
                 val userName = it.userName
                 _state.update { it.copy(numberOfPosts = userPosts.size, userName = userName) }
+                Log.d("SharedViewModel", "${userLikedPosts.size} liked posts: $userLikedPosts")
 
                 // Flow to Collect UserPosts only when user is not null
-                feedRepository.getMemesByIds(userPosts)
-                    .collect {
-                        val userPostsList = state.value.userPosts.toMutableList()
-                        userPostsList.addAll(it)
-                        Log.d("UserPostFlow", "Collected ${it.size} Memes: $it")
-                        _state.update { it.copy(userPosts = userPostsList) }
-                    }
+                launch(Dispatchers.IO){
+                    feedRepository.getMemesByIds(userPosts)
+                        .collect {
+                            val userPostsList = state.value.userPosts.toMutableList()
+                            userPostsList.addAll(it)
+                            Log.d("UserPostFlow", "Collected ${it.size} Memes: $it")
+                            _state.update { it.copy(userPosts = userPostsList) }
+                        }
+                }
+
+                // Flow to Collect UserLikedPosts only when user is not null
+                launch(Dispatchers.IO){
+                    feedRepository.getMemesByIds(userLikedPosts)
+                        .collect {
+                            val likedPostsList = state.value.likedPosts.toMutableList()
+                            likedPostsList.addAll(it)
+                            Log.d("LikedPostsFlow", "Collected ${it.size} liked Memes: $it")
+                            _state.update { it.copy(likedPosts = likedPostsList) }
+                        }
+                }
 
             }
 
@@ -131,27 +148,23 @@ class SharedViewModel @Inject constructor(
 
             is SharedEvent.DeleteMeme -> {
 
-                val posts = state.value.userPosts.toMutableList()
-
-                val workRequest = OneTimeWorkRequestBuilder<MemeDeleteWorker>()
-                    .setInputData(
-                        workDataOf(
-                            MemeDeleteWorker.MEME_ID to event.memeId,
-                            MemeDeleteWorker.USER_ID to user.userId,
-                            MemeDeleteWorker.PATH to getPathFromUrl(event.url)
-                        )
-                    ).build()
-
-                workManager.enqueue(workRequest)
-
-                posts.removeIf{it.id == event.memeId}
-                _state.update { it.copy(userPosts = posts) }
+                if (state.value.selectedType == SelectedType.POSTS)
+                    deletePostAndUpdateState(event.memeId, event.url)
+                else
+                    viewModelScope.launch {
+                        removeFavoriteAndUpdateState(event.memeId)
+                    }
 
             }
 
             is SharedEvent.ShowMeme -> {
                 _state.update { it.copy(selectedMeme = event.meme) }
             }
+
+            is SharedEvent.ChangeType -> {
+                _state.update { it.copy(selectedType = event.type) }
+            }
+
         }
 
     }
@@ -169,7 +182,9 @@ class SharedViewModel @Inject constructor(
 
                 uploadingMemeList.removeIf{ it.workId == workInfo.id }
                 val memeId = workInfo.outputData.getInt("POST_ID", 0)
-                userPosts.add(feedRepository.getMemeById(memeId))
+                feedRepository.getMemeById(memeId)?.let {
+                    userPosts.add(it)
+                }
 
                 Log.d("WorkState", "Collected Succeeded WorkInfo of $workInfo")
                 _state.update { it.copy(uploadingMemes = uploadingMemeList, userPosts = userPosts) }
@@ -202,17 +217,48 @@ class SharedViewModel @Inject constructor(
         val urlPrefix = "https://bgcrldfhsleabdynwmgg.supabase.co/storage/v1/object/"
         return url.removePrefix(urlPrefix)
     }
+
+    private fun deletePostAndUpdateState(memeId: Int?, url: String){
+
+        val posts = state.value.userPosts.toMutableList()
+
+        val workRequest = OneTimeWorkRequestBuilder<MemeDeleteWorker>()
+            .setInputData(
+                workDataOf(
+                    MemeDeleteWorker.MEME_ID to memeId,
+                    MemeDeleteWorker.USER_ID to user.userId,
+                    MemeDeleteWorker.PATH to getPathFromUrl(url)
+                )
+            ).build()
+
+        workManager.enqueue(workRequest)
+
+        posts.removeIf{it.id == memeId}
+        _state.update { it.copy(userPosts = posts) }
+    }
+
+    private suspend fun removeFavoriteAndUpdateState(memeId: Int){
+
+        val likedPosts = state.value.likedPosts.toMutableList()
+
+        withContext(Dispatchers.IO){ userRepository.removeFromLikedPosts(memeId, user.userId) }
+
+        likedPosts.removeIf{it.id == memeId}
+        _state.update { it.copy(likedPosts = likedPosts) }
+    }
 }
 
 data class SharedState(
 
     val uploadingMemes: List<UploadingMeme> = emptyList(),
     val userPosts: List<MemeDTO> = emptyList(),
+    val likedPosts: List<MemeDTO> = emptyList(),
     val postUriString: String = "",
     val workIds: List<UUID> = emptyList(),
     val userName: String = "",
     val numberOfPosts: Int = 0,
-    val selectedMeme: MemeDTO? = null
+    val selectedMeme: MemeDTO? = null,
+    val selectedType: SelectedType = SelectedType.POSTS
 
 )
 
@@ -225,4 +271,8 @@ data class UploadingMeme(
 
 enum class UploadingStatus{
     SUCCESS, RUNNING, FAILURE
+}
+
+enum class SelectedType(val typeName: String){
+    POSTS("Posts"), FAVORITES("Favorites")
 }

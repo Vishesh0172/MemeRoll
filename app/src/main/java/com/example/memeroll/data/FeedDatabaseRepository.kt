@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 interface FeedDatabaseRepository {
-    suspend fun getLikesById(postId: Int): Double
+
     suspend fun getFeedMeme(from: Long): List<MemeDTO>?
-    suspend fun getMemeById(id: Int): MemeDTO
+    suspend fun getMemeById(id: Int): MemeDTO?
     suspend fun likeMeme(postId: Int)
     suspend fun unlikeMeme(postId: Int)
     suspend fun addMeme(meme: MemeDTO): Int?
@@ -23,9 +23,7 @@ interface FeedDatabaseRepository {
         private val database: Postgrest
     ) : FeedDatabaseRepository {
 
-        override suspend fun getLikesById(postId: Int): Double {
-            return getMemeById(postId).likeCount
-        }
+
 
         override suspend fun getFeedMeme(from: Long): List<MemeDTO>? {
             return try {
@@ -41,7 +39,7 @@ interface FeedDatabaseRepository {
             }
         }
 
-        override suspend fun getMemeById(id: Int): MemeDTO {
+        override suspend fun getMemeById(id: Int): MemeDTO? {
             return try {
                 database.from("feed_table").select {
                     filter {
@@ -50,7 +48,7 @@ interface FeedDatabaseRepository {
                 }.decodeSingle<MemeDTO>()
             }catch (e: Exception){
                 Log.d("FeedRepository","Couldn't fetch meme by Id: $e")
-                MemeDTO()
+                null
             }
         }
 
@@ -58,10 +56,10 @@ interface FeedDatabaseRepository {
 
             Log.d("FeedRepository", "$postId")
             try {
-                val currentLikes = getMemeById(postId).likeCount
+                val meme = getMemeById(postId) ?: throw NullPointerException()
                 database.from("feed_table").update(
                     {
-                        set("like_count", currentLikes.toLong() + 1L)
+                        set("like_count", meme.likeCount.toLong().plus(1L))
                     }
                 ) {
                     filter {
@@ -76,10 +74,10 @@ interface FeedDatabaseRepository {
         override suspend fun unlikeMeme(postId: Int) {
             Log.d("FeedRepository", "$postId")
             try {
-                val currentLikes = getMemeById(postId).likeCount
+                val meme = getMemeById(postId) ?: throw NullPointerException()
                 database.from("feed_table").update(
                     {
-                        set("like_count", currentLikes.toLong() - 1L)
+                        set("like_count", meme.likeCount.toLong().minus(1L))
                     }
                 ) {
                     filter {
@@ -133,7 +131,7 @@ interface FeedDatabaseRepository {
 
                         if (i < idList.size) {
                             val meme = getMemeById(idList[i])
-                            memeList.add(meme)
+                            meme?.let { memeList.add(it) }
                         } else {
                             break
                         }

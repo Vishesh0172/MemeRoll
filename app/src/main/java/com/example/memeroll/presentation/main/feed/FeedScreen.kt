@@ -19,11 +19,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,38 +46,59 @@ import com.example.memeroll.presentation.main.components.DefaultProfilePicture
 import com.example.memeroll.presentation.main.feed.FeedEvent.*
 import java.util.Locale
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     modifier: Modifier = Modifier,
     state: FeedState,
     onEvent: (FeedEvent) -> Unit,
-    navigateToProfile:() -> Unit
+    navigateToProfile:() -> Unit,
 ){
 
 
     Box(modifier = modifier.fillMaxSize()) {
 
-        val pagerState = rememberPagerState { state.memeMap.keys.size }
-        VerticalPager(
-            state = pagerState,
-        ) { index ->
-            val memeList = state.memeMap.keys
-            val meme = memeList.elementAt(index)
-            if (index < pagerState.pageCount - 1){
-                MemeComposable(meme = meme, onEvent = onEvent, liked = state.memeMap.getValue(meme))
+        val pagerState = rememberPagerState { state.memeList.size }
+
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onEvent(Refreshed) },
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            VerticalPager(
+                state = pagerState,
+            ) { index ->
+                val memeList = state.memeList
+                val meme = memeList[index]
+                if (index < pagerState.pageCount - 1) {
+                    MemeComposable(
+                        meme = meme,
+                        onEvent = onEvent,
+                        liked = meme.id in state.likedPostsIds
+                    )
+                } else {
+                    onEvent(LimitReached(index))
+                    MemeComposable(
+                        meme = meme,
+                        onEvent = onEvent,
+                        liked = meme.id in state.likedPostsIds
+                    )
+                }
             }
-            else{
-                onEvent(LimitReached(index))
-                MemeComposable(meme = meme, onEvent = onEvent, liked = state.memeMap.getValue(meme))
-           }
-        }
 
-        Text(text = "MemeRoll", modifier = Modifier.align(Alignment.TopStart).padding(start = 10.dp, top = 10.dp), style = MaterialTheme.typography.displayMedium)
-        IconButton(onClick = {navigateToProfile()}, modifier = Modifier.align(Alignment.TopEnd).padding(start = 10.dp, top = 10.dp)) {
-            Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
+            Text(
+                text = "MemeRoll",
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 10.dp, top = 10.dp),
+                style = MaterialTheme.typography.displayMedium
+            )
+            IconButton(
+                onClick = { navigateToProfile() },
+                modifier = Modifier.align(Alignment.TopEnd).padding(start = 10.dp, top = 10.dp)
+            ) {
+                Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
+            }
         }
-
     }
 }
 
@@ -140,11 +163,13 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                DefaultProfilePicture(
-                    modifier = Modifier.size(30.dp),
-                    userName = meme.userName,
-                    textSize = 20.sp
-                )
+                if (meme.userName.isNotEmpty()) {
+                    DefaultProfilePicture(
+                        modifier = Modifier.size(30.dp),
+                        userName = meme.userName,
+                        textSize = 20.sp
+                    )
+                }
 
                 Text(text = meme.userName, modifier = Modifier.padding(start = 5.dp))
 
@@ -164,7 +189,8 @@ fun FeedPreview(){
         FeedScreen(
             state = FeedState(memeMap = emptyMap()),
             onEvent = {},
-            navigateToProfile = {}
+            navigateToProfile = {},
+            modifier = TODO(),
         )
     }
 }
