@@ -1,7 +1,5 @@
 package com.example.memeroll.presentation.auth.signUp
 
-import com.example.memeroll.presentation.auth.signIn.SignInEvent
-
 sealed interface SignUpEvent {
 
     data class EmailChange(val value: String): SignUpEvent

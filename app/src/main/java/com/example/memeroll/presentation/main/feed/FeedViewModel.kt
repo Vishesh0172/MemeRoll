@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memeroll.authentication.AuthRepositoryImpl
 import com.example.memeroll.data.FeedDatabaseRepositoryImpl
-import com.example.memeroll.data.userData.UserDataRepositoryImpl
+import com.example.memeroll.data.UserDataRepositoryImpl
 import com.example.memeroll.model.MemeDTO
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -46,10 +46,9 @@ class FeedViewModel @Inject constructor(
                 likedPostsIds = withContext(Dispatchers.IO) {
                     userRepository.getUserById(it.id).likedPosts ?: emptyList()
                 }
+
                 _state.update { it.copy(likedPostsIds = likedPostsIds) }
-                //val memeMap = withContext(Dispatchers.IO) { getMemeMap(0) }
                 val memes = withContext(Dispatchers.IO) { feedRepository.getFeedMeme(0) ?: emptyList() }
-                //_state.update { it.copy(memeMap = memeMap) }
                 _state.update { it.copy(memeList = memes) }
 
             }
@@ -126,43 +125,7 @@ class FeedViewModel @Inject constructor(
     }
 
 
-    private fun getUpdatedMemeMap(postId: Int, liked: Boolean): Map<MemeDTO, Boolean> {
 
-        val memeMap = state.value.memeMap.toMutableMap()
-        val meme = memeMap.keys.find { it.id == postId }
-
-        meme?.let {
-
-            val newMeme = it.copy()
-            if (liked)
-                meme.likeCount = meme.likeCount + 1L
-            else
-                meme.likeCount = meme.likeCount - 1L
-
-            memeMap[meme] = liked
-        }
-
-        return memeMap.toMap()
-    }
-
-
-    private suspend fun getMemeMap(from: Long): Map<MemeDTO, Boolean> {
-
-        val memeMap = mutableMapOf<MemeDTO, Boolean>()
-
-        val meme = feedRepository.getFeedMeme(from = from)?.let {
-            if (it.isNotEmpty())
-                it.first()
-            else
-                null
-        }
-
-        meme?.let {
-            val liked = it.id in likedPostsIds
-            memeMap.put(it, liked)
-        }
-        return memeMap
-    }
 
     private suspend fun getNextMeme(pageNumber: Long): MemeDTO?{
 

@@ -1,5 +1,6 @@
-package com.example.memeroll.presentation.main.profile
+package com.example.memeroll.presentation.main.shared.profile
 
+import android.icu.text.CompactDecimalFormat
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -87,6 +88,7 @@ import com.example.memeroll.presentation.main.shared.UploadingMeme
 import com.example.memeroll.presentation.main.shared.UploadingStatus
 import com.example.memeroll.ui.theme.MemeRollTheme
 import io.github.jan.supabase.auth.status.SessionStatus
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -138,25 +140,26 @@ fun ProfileScreen(
 
         ) {
 
-            UserPostsGrid(
-                list = if (selectedType == SelectedType.POSTS ) sharedState.userPosts else sharedState.likedPosts,
-                userName = sharedState.userName,
-                numberOfPosts = sharedState.numberOfPosts,
-                onMemeClicked = {
-                    onSharedEvent(SharedEvent.ShowMeme(it))
-                    showFullMeme = true
-                },
-                changeType = {
-                    onSharedEvent(SharedEvent.ChangeType(it))
-                },
-                selectedTypeName = sharedState.selectedType.typeName
-            )
+            if (sharedState.userName.isNotEmpty()) {
+                UserPostsGrid(
+                    list = if (selectedType == SelectedType.POSTS) sharedState.userPosts else sharedState.likedPosts,
+                    userName = sharedState.userName,
+                    onMemeClicked = {
+                        onSharedEvent(SharedEvent.ShowMeme(it))
+                        showFullMeme = true
+                    },
+                    changeType = {
+                        onSharedEvent(SharedEvent.ChangeType(it))
+                    },
+                    selectedTypeName = sharedState.selectedType.typeName
+                )
+            }else
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
 
             UploadingMemesList(
                 list = sharedState.uploadingMemes,
                 modifier = Modifier.align(Alignment.BottomCenter),
                 onSharedEvent = onSharedEvent,
-                onProfileEvent = onProfileEvent
             )
 
             if (showFullMeme && sharedState.selectedMeme != null)
@@ -175,7 +178,10 @@ fun ProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileTopBar(modifier: Modifier = Modifier, onProfileEvent: (ProfileEvent) -> Unit) {
+fun ProfileTopBar(
+    modifier: Modifier = Modifier,
+    onProfileEvent: (ProfileEvent) -> Unit
+) {
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -207,7 +213,6 @@ fun UserPostsGrid(
     modifier: Modifier = Modifier,
     list: List<MemeDTO>,
     userName: String,
-    numberOfPosts: Int,
     onMemeClicked: (MemeDTO) -> Unit,
     changeType: (SelectedType) -> Unit,
     selectedTypeName: String
@@ -216,7 +221,11 @@ fun UserPostsGrid(
     LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = modifier.fillMaxSize()) {
 
         header {
-            ProfileHeader(userName = userName, numberOfPosts = numberOfPosts, changeType = changeType, selectedTypeName = selectedTypeName)
+            ProfileHeader(
+                userName = userName,
+                changeType = changeType,
+                selectedTypeName = selectedTypeName
+            )
         }
 
         items(list) {
@@ -224,7 +233,7 @@ fun UserPostsGrid(
                 .aspectRatio(1f)
                 .padding(1.7.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .clickable(onClick = { onMemeClicked(it) } )
+                .clickable(onClick = { onMemeClicked(it) })
                 .animateItem()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current).data(it.imgUrl)
@@ -240,7 +249,12 @@ fun UserPostsGrid(
 }
 
 @Composable
-fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts: Int, changeType:(SelectedType) -> Unit, selectedTypeName: String) {
+fun ProfileHeader(
+    modifier: Modifier = Modifier,
+    userName: String,
+    changeType: (SelectedType) -> Unit,
+    selectedTypeName: String
+) {
 
     var showMenu by remember { mutableStateOf(false) }
     Column(
@@ -249,27 +263,19 @@ fun ProfileHeader(modifier: Modifier = Modifier, userName: String, numberOfPosts
             .padding(12.dp)
     ) {
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
 
-                if (userName.isNotEmpty()) {
-                    DefaultProfilePicture(
-                        userName = userName,
-                        textSize = 60.sp,
-                        modifier = Modifier.size(90.dp)
-                    )
-                }
-                Text(text = "@$userName", fontSize = 17.sp)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+            if (userName.isNotEmpty()) {
+                DefaultProfilePicture(
+                    userName = userName,
+                    textSize = 60.sp,
+                    modifier = Modifier.size(90.dp)
+                )
             }
-
-            //Text(numberOfPosts.toString(), style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(end = 25.dp))
+            Text(text = "@$userName", fontSize = 17.sp)
         }
+
 
         Spacer(modifier = Modifier.height(40.dp))
 
@@ -328,10 +334,7 @@ fun UploadingMemesList(
     modifier: Modifier = Modifier,
     list: List<UploadingMeme>,
     onSharedEvent: (SharedEvent) -> Unit,
-    onProfileEvent: (ProfileEvent) -> Unit
 ) {
-
-    Log.d("SharedWork", "UploadingMemes Composable has list:$list ")
 
     LazyRow(
         modifier = modifier
@@ -396,7 +399,12 @@ fun UploadingMemesList(
 
 @OptIn(ExperimentalCoilApi::class)
 @Composable
-fun ExpandedMeme(modifier: Modifier = Modifier, meme: MemeDTO, onDismiss: () -> Unit, onDeleteClicked:(Int, String) -> Unit) {
+fun ExpandedMeme(
+    modifier: Modifier = Modifier,
+    meme: MemeDTO,
+    onDismiss: () -> Unit,
+    onDeleteClicked: (Int, String) -> Unit
+) {
 
     val previewHandler = AsyncImagePreviewHandler { ColorImage(Color.Magenta.toArgb()) }
 
@@ -434,15 +442,23 @@ fun ExpandedMeme(modifier: Modifier = Modifier, meme: MemeDTO, onDismiss: () -> 
                         .padding(top = 5.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = null
-                        )
-                        Text(
-                            text = meme.likeCount.toString(),
-                            modifier = Modifier.padding(start = 3.dp)
-                        )
+                    Column {
+                        Row {
+                            Icon(
+                                imageVector = Icons.Default.FavoriteBorder,
+                                contentDescription = null
+                            )
+
+                            val likes = CompactDecimalFormat.getInstance(
+                                Locale.US,
+                                CompactDecimalFormat.CompactStyle.SHORT
+                            ).format(meme.likeCount)
+                            Text(
+                                text = likes,
+                                modifier = Modifier.padding(start = 3.dp)
+                            )
+                        }
+                        Text("@${meme.userName}")
                     }
                     IconButton(
                         onClick = {
@@ -474,7 +490,7 @@ fun ProfilePreview() {
         )
 
         ProfileScreen(
-            state = ProfileState(userName = "Vishesh"),
+            state = ProfileState(userName = "UserName"),
             navigateToPostMeme = {},
             sharedState = shareState,
             onSharedEvent = {},

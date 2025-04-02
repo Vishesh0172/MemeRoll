@@ -1,5 +1,6 @@
-package com.example.memeroll.presentation.main.post
+package com.example.memeroll.presentation.main.shared.post
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,8 +24,6 @@ import com.example.memeroll.ui.theme.MemeRollTheme
 fun PostScreen(
     modifier: Modifier = Modifier,
     sharedState: SharedState,
-    state: PostState,
-    onPostEvent: (PostEvent) -> Unit,
     onSharedEvent: (SharedEvent) -> Unit,
     navigateBack:() -> Unit
 ) {
@@ -40,7 +39,7 @@ fun PostScreen(
 
         AsyncImage(
             modifier = Modifier.fillMaxSize().align(Alignment.Center),
-            model = android.net.Uri.parse(sharedState.postUriString),
+            model = Uri.parse(sharedState.postUriString),
             contentDescription = null
         )
 
@@ -58,9 +57,7 @@ fun PostScreen(
 fun PostPreview() {
     MemeRollTheme {
         PostScreen(
-            state = PostState(),
             onSharedEvent = {},
-            onPostEvent = {},
             navigateBack = {},
             modifier = TODO(),
             sharedState = TODO(),

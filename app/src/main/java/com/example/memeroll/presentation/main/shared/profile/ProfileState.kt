@@ -1,4 +1,4 @@
-package com.example.memeroll.presentation.main.profile
+package com.example.memeroll.presentation.main.shared.profile
 
 
 import com.example.memeroll.model.MemeDTO

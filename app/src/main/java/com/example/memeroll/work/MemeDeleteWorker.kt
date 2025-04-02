@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.memeroll.data.FeedDatabaseRepositoryImpl
 import com.example.memeroll.data.StorageRepositoryImpl
-import com.example.memeroll.data.userData.UserDataRepositoryImpl
+import com.example.memeroll.data.UserDataRepositoryImpl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 

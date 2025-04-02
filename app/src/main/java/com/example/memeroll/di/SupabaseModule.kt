@@ -3,7 +3,7 @@ package com.example.memeroll.di
 import com.example.memeroll.authentication.AuthRepositoryImpl
 import com.example.memeroll.data.FeedDatabaseRepositoryImpl
 import com.example.memeroll.data.StorageRepositoryImpl
-import com.example.memeroll.data.userData.UserDataRepositoryImpl
+import com.example.memeroll.data.UserDataRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,15 +23,18 @@ import javax.inject.Singleton
 @Module
 object SupabaseModule {
 
+    private const val SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnY3JsZGZoc2xlYWJkeW53bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5NTA2MzQsImV4cCI6MjA1NzUyNjYzNH0.f1kW8Bn9wt4NYJbJhNXV5jAWdoJHK3HsPc2ujditCAE"
+
+    private const val SUPABASE_URL = "https://bgcrldfhsleabdynwmgg.supabase.co"
+
     @Provides
     @Singleton
     fun provideSupabaseClient(): SupabaseClient{
 
-        val supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnY3JsZGZoc2xlYWJkeW53bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5NTA2MzQsImV4cCI6MjA1NzUyNjYzNH0.f1kW8Bn9wt4NYJbJhNXV5jAWdoJHK3HsPc2ujditCAE"
-        val supabase_url = "https://bgcrldfhsleabdynwmgg.supabase.co"
         return createSupabaseClient(
-            supabaseUrl = supabase_url,
-            supabaseKey = supabase_key
+            supabaseUrl = SUPABASE_URL,
+            supabaseKey = SUPABASE_KEY
         ){
             install(Postgrest)
             install(Auth){

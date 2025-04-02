@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.VerticalPager
@@ -28,19 +29,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.memeroll.model.MemeDTO
 import com.example.memeroll.presentation.main.components.DefaultProfilePicture
 import com.example.memeroll.presentation.main.feed.FeedEvent.*
@@ -66,24 +71,31 @@ fun FeedScreen(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            VerticalPager(
-                state = pagerState,
-            ) { index ->
-                val memeList = state.memeList
-                val meme = memeList[index]
-                if (index < pagerState.pageCount - 1) {
-                    MemeComposable(
-                        meme = meme,
-                        onEvent = onEvent,
-                        liked = meme.id in state.likedPostsIds
-                    )
-                } else {
-                    onEvent(LimitReached(index))
-                    MemeComposable(
-                        meme = meme,
-                        onEvent = onEvent,
-                        liked = meme.id in state.likedPostsIds
-                    )
+            if (state.memeList.isNotEmpty()) {
+
+                VerticalPager(
+                    state = pagerState,
+                ) { index ->
+                    val memeList = state.memeList
+                    val meme = memeList[index]
+                    if (index < pagerState.pageCount - 1) {
+                        MemeComposable(
+                            meme = meme,
+                            onEvent = onEvent,
+                            liked = meme.id in state.likedPostsIds
+                        )
+                    } else {
+                        onEvent(LimitReached(index))
+                        MemeComposable(
+                            meme = meme,
+                            onEvent = onEvent,
+                            liked = meme.id in state.likedPostsIds
+                        )
+                    }
+                }
+            }else{
+                Box(modifier = Modifier.align(Alignment.Center), contentAlignment = Alignment.Center){
+                    Text("Nothing to show here", textAlign = TextAlign.Center)
                 }
             }
 
@@ -107,14 +119,16 @@ fun FeedScreen(
 fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedEvent) -> Unit, liked: Boolean) {
 
     var likedBoolean by remember { mutableStateOf(liked) }
-    var likeCount by remember { mutableStateOf(meme.likeCount) }
-    val likeColor by animateColorAsState(targetValue = if (likedBoolean) Color.Red else Color.White)
+    var likeCount by remember { mutableDoubleStateOf(meme.likeCount) }
+    val likeColor by animateColorAsState(targetValue = if (likedBoolean) Color.Red else Color.White,
+        label = "like color animation"
+    )
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center){
 
         AsyncImage(
             modifier = Modifier.fillMaxSize(),
-            model = ImageRequest.Builder(LocalContext.current).data(meme.imgUrl).build(),
+            model = ImageRequest.Builder(LocalContext.current).data(meme.imgUrl).crossfade(true).build(),
             contentDescription = null,
         )
 
@@ -139,9 +153,17 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
                     }
                 }
             ) {
+
+                Icon(
+                    tint = Color(0, 0, 0, 40),
+                    modifier = Modifier.size(100.dp).offset(3.dp, 3.dp).blur(2.dp),
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null
+                )
+
                 Icon(
                     tint = likeColor,
-                    modifier = Modifier.size(100.dp).shadow(10.dp, CircleShape),
+                    modifier = Modifier.size(100.dp),
                     imageVector = if(likedBoolean) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = null
                 )
@@ -151,7 +173,8 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
 
             Text(
                 text = likes,
-                modifier = Modifier.shadow(10.dp)
+                modifier = Modifier.shadow(10.dp, CircleShape, ambientColor = Color.LightGray, spotColor = Color.DarkGray),
+
             )
         }
 
@@ -184,7 +207,7 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
 @Preview
 @Composable
 fun FeedPreview(){
-    val memeList = listOf<MemeDTO>(MemeDTO(likeCount = 1000.0, userName = "Vishesh"))
+
     Surface{
         FeedScreen(
             state = FeedState(memeMap = emptyMap()),

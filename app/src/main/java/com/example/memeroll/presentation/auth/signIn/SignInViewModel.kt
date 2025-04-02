@@ -24,7 +24,7 @@ class SignInViewModel @Inject constructor(
 
     private val _emailState = MutableStateFlow(_state.value.email)
     private val _passwordState = MutableStateFlow(_state.value.password)
-    private val emailRegex = Regex("^[\\w\\-\\.]+@([\\w-]+\\.)+[\\w-]{2,}\$")
+    private val emailRegex = Regex("^[\\w\\-.]+@([\\w-]+\\.)+[\\w-]{2,}\$")
     val state = combine(_emailState, _passwordState, _state){ email, password, state ->
 
         val validEmail = email.matches(emailRegex)
@@ -52,11 +52,11 @@ class SignInViewModel @Inject constructor(
     fun onEvent(event: SignInEvent){
         when(event){
             is SignInEvent.EmailChange -> {
-                //_state.update { it.copy(email = event.value) }
+
                 _emailState.update { event.value.trim() }
             }
             is SignInEvent.PasswordChange -> {
-                //_state.update { it.copy(password = event.value) }
+
                 _passwordState.update { event.value.trim() }
             }
             SignInEvent.SignInClick -> {

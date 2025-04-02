@@ -23,10 +23,9 @@ import com.example.memeroll.presentation.auth.signUp.SignUpScreen
 import com.example.memeroll.presentation.auth.signUp.SignUpViewModel
 import com.example.memeroll.presentation.main.feed.FeedScreen
 import com.example.memeroll.presentation.main.feed.FeedViewModel
-import com.example.memeroll.presentation.main.post.PostScreen
-import com.example.memeroll.presentation.main.post.PostViewModel
-import com.example.memeroll.presentation.main.profile.ProfileScreen
-import com.example.memeroll.presentation.main.profile.ProfileViewModel
+import com.example.memeroll.presentation.main.shared.post.PostScreen
+import com.example.memeroll.presentation.main.shared.profile.ProfileScreen
+import com.example.memeroll.presentation.main.shared.profile.ProfileViewModel
 import com.example.memeroll.presentation.main.shared.SharedViewModel
 import kotlinx.serialization.Serializable
 
@@ -35,7 +34,7 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
 
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "AuthNavigation"){
+    NavHost(navController = navController, startDestination = "AuthNavigation", modifier = modifier){
 
         // Auth Navigation
 
@@ -122,16 +121,11 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
 
             composable<PostRoute>{
 
-                val viewModel = hiltViewModel<PostViewModel>()
-                val state by viewModel.state.collectAsState()
-
                 val sharedViewModel = it.sharedViewModel<SharedViewModel>(navController)
                 val sharedState by sharedViewModel.state.collectAsState()
 
                 PostScreen(
                     modifier = Modifier.padding(scaffoldPadding),
-                    state = state,
-                    onPostEvent = viewModel::onEvent,
                     onSharedEvent = sharedViewModel::onSharedEvent,
                     navigateBack = {
                         navController.navigateUp()

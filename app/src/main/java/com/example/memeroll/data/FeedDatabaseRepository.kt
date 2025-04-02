@@ -27,7 +27,7 @@ interface FeedDatabaseRepository {
 
         override suspend fun getFeedMeme(from: Long): List<MemeDTO>? {
             return try {
-                val list = database.from("feed_table").select() {
+                val list = database.from("feed_table").select {
                     range(from = from, to = from)
 
                 }.decodeList<MemeDTO>()

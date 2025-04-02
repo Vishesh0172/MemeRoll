@@ -1,4 +1,4 @@
-package com.example.memeroll.presentation.main.post
+package com.example.memeroll.presentation.main.shared.post
 
 import android.net.Uri
 

@@ -8,7 +8,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.memeroll.data.FeedDatabaseRepositoryImpl
 import com.example.memeroll.data.StorageRepositoryImpl
-import com.example.memeroll.data.userData.UserDataRepositoryImpl
+import com.example.memeroll.data.UserDataRepositoryImpl
 import com.example.memeroll.model.MemeDTO
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject

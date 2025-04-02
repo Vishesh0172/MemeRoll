@@ -1,4 +1,4 @@
-package com.example.memeroll.data.userData
+package com.example.memeroll.data
 
 import android.util.Log
 import com.example.memeroll.model.MemeDTO
@@ -23,16 +23,16 @@ class UserDataRepositoryImpl @Inject constructor(
     private val database: Postgrest
 ) : UserDataRepository{
     override suspend fun createUser(name: String, userId: String) {
+
         database.from("users_table").insert(
             UserDTO(
                 userId = userId,
                 userName = name,
                 posts = emptyList<Int>()
-            ),
-            {
-                defaultToNull = false
-            }
-        )
+            )
+        ) {
+            defaultToNull = false
+        }
     }
 
     override suspend fun getUserById(id: String): UserDTO {
@@ -51,10 +51,7 @@ class UserDataRepositoryImpl @Inject constructor(
     override suspend fun getUserPosts(memeIds: List<Int>): List<MemeDTO> {
 
         val memeList = mutableListOf<MemeDTO>()
-//        for (id in memeIds){
-//            val meme = feedRepository.getMemeById(id)
-//            memeList.add(meme)
-//        }
+
 
         return memeList
     }
@@ -141,11 +138,7 @@ class UserDataRepositoryImpl @Inject constructor(
     override suspend fun checkIfLiked(postId: Int, userId: String): Boolean {
 
         val likedMemeIds = (getUserById(userId).likedPosts ?: emptyList<Int>())
-//        val likeList = database.from("users_table").select(Columns.list("liked_memes")){
-//            filter {
-//                eq("user_id", userId)
-//            }
-//        }.decodeList<Int>()
+
 
         return postId in likedMemeIds
     }

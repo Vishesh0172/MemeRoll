@@ -1,11 +1,9 @@
-package com.example.memeroll.presentation.main.profile
+package com.example.memeroll.presentation.main.shared.profile
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.memeroll.authentication.AuthRepositoryImpl
-import com.example.memeroll.data.FeedDatabaseRepositoryImpl
-import com.example.memeroll.data.userData.UserDataRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,10 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-
-    userDataRepository: UserDataRepositoryImpl,
     private val authRepository: AuthRepositoryImpl,
-    private val feedRepository: FeedDatabaseRepositoryImpl,
 
 ) : ViewModel() {
 

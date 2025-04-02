@@ -1,4 +1,4 @@
-package com.example.memeroll.presentation.main.profile
+package com.example.memeroll.presentation.main.shared.profile
 
 
 sealed interface ProfileEvent {
