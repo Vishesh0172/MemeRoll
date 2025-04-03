@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.konan.properties.Properties
+
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -21,9 +22,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val key = gradleLocalProperties(rootDir, providers).getProperty("SUPABASE_ANON_KEY")
+        val url = gradleLocalProperties(rootDir, providers).getProperty("SUPABASE_URL")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$key\"")
+        buildConfigField("String", "SUPABASE_URL",  "\"$url\"")
+
 
 
     }
+
 
     buildTypes {
         release {
@@ -95,3 +102,4 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.7.8")
 
 }
+
