@@ -198,7 +198,11 @@ fun ProfileTopBar(
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                 DropdownMenuItem(
                     text = { Text("Sign Out") },
-                    onClick = { onProfileEvent(ProfileEvent.SignOut) })
+                    onClick = {
+                        showMenu = false
+                        onProfileEvent(ProfileEvent.SignOut)
+                    }
+                )
             }
 
             IconButton(onClick = {

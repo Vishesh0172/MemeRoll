@@ -124,7 +124,7 @@ fun MemeComposable(modifier: Modifier = Modifier, meme: MemeDTO, onEvent: (FeedE
         label = "like color animation"
     )
 
-    Box(modifier = modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center){
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentAlignment = Alignment.Center){
 
         AsyncImage(
             modifier = Modifier.fillMaxSize(),

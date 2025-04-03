@@ -23,10 +23,11 @@ import com.example.memeroll.presentation.auth.signUp.SignUpScreen
 import com.example.memeroll.presentation.auth.signUp.SignUpViewModel
 import com.example.memeroll.presentation.main.feed.FeedScreen
 import com.example.memeroll.presentation.main.feed.FeedViewModel
+import com.example.memeroll.presentation.main.shared.SharedViewModel
 import com.example.memeroll.presentation.main.shared.post.PostScreen
 import com.example.memeroll.presentation.main.shared.profile.ProfileScreen
 import com.example.memeroll.presentation.main.shared.profile.ProfileViewModel
-import com.example.memeroll.presentation.main.shared.SharedViewModel
+import com.example.memeroll.presentation.navigation.NavRoutes.*
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -34,14 +35,23 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
 
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "AuthNavigation", modifier = modifier){
+    NavHost(navController = navController, startDestination = AuthNav.route, modifier = modifier){
 
         // Auth Navigation
 
-        navigation(route = "AuthNavigation", startDestination = "SignInRoute"){
+        navigation(
+            route = AuthNav.route,
+            enterTransition = {enterTransitions(AuthNav)},
+            exitTransition = {exitTransitions(AuthNav)},
+            startDestination = SignIn.route
+        ){
 
 
-            composable(route = "SignInRoute"){
+            composable(
+                route = SignIn.route,
+                enterTransition = {enterTransitions(SignIn)},
+                exitTransition = {exitTransitions(SignIn)},
+            ){
                 val viewModel = hiltViewModel<SignInViewModel>()
                 val state  by viewModel.state.collectAsStateWithLifecycle()
                 SignInScreen(
@@ -49,19 +59,23 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
                     onEvent = viewModel::onEvent,
                     state = state,
                     authComplete = {
-                        navController.navigate(route = "MainNavigation"){
-                           popUpTo("AuthNavigation"){inclusive = true}
+                        navController.navigate(route = MainNav.route){
+                           popUpTo(AuthNav.route){inclusive = true}
                         }
                         Log.d("Authentication", "Sign In Complete")
                     },
                     navigateToSignUp = {
-                        navController.navigate(route = "SignUpRoute")
+                        navController.navigate(route = SignUp.route)
                     }
 
                 )
             }
 
-            composable(route = "SignUpRoute"){
+            composable(
+                route = SignUp.route,
+                enterTransition = { enterTransitions(SignUp) },
+                exitTransition = { exitTransitions(SignUp) }
+            ){
                 val viewModel = hiltViewModel<SignUpViewModel>()
                 val state  by viewModel.state.collectAsStateWithLifecycle()
                 SignUpScreen(
@@ -69,8 +83,8 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
                     onEvent = viewModel::onEvent,
                     state = state,
                     authComplete = {
-                        navController.navigate(route = "MainNavigation"){
-                            popUpTo("AuthNavigation")
+                        navController.navigate(route = MainNav.route){
+                            popUpTo(AuthNav.route)
                         }
                         Log.d("Authentication", "Sign Up Complete")
                     }
@@ -78,11 +92,21 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
             }
         }
 
+
         // Main Navigation
 
-        navigation(route = "MainNavigation", startDestination = "FeedRoute"){
+        navigation(
+            route = MainNav.route,
+            startDestination = Feed.route,
+            enterTransition = { enterTransitions(MainNav) },
+            exitTransition = { exitTransitions(MainNav) },
+        ){
 
-            composable(route = "FeedRoute"){
+            composable(
+                route = Feed.route,
+                enterTransition = { enterTransitions(Feed) },
+                exitTransition = { exitTransitions(Feed) },
+            ){
 
                 val viewModel = hiltViewModel<FeedViewModel>()
                 val state by viewModel.state.collectAsStateWithLifecycle()
@@ -97,7 +121,10 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
                 )
             }
 
-            composable<ProfileRoute>{
+            composable<ProfileRoute>(
+                enterTransition = { enterTransitions(Profile) },
+                exitTransition ={exitTransitions(Profile)}
+            ){
 
                 val sharedViewModel = it.sharedViewModel<SharedViewModel>(navController)
                 val sharedState by sharedViewModel.state.collectAsState()
@@ -112,14 +139,17 @@ fun AppNavigation(modifier: Modifier = Modifier, scaffoldPadding: PaddingValues)
                     sharedState = sharedState,
                     onProfileEvent = viewModel::onEvent,
                     navigateToAuth = {
-                        navController.navigate("AuthNavigation"){
-                            popUpTo("MainNavigation") {inclusive = true}
+                        navController.navigate(AuthNav.route){
+                            popUpTo(MainNav.route) {inclusive = true}
                         }
                     }
                 )
             }
 
-            composable<PostRoute>{
+            composable<PostRoute>(
+                enterTransition = { enterTransitions(Post) },
+                exitTransition = {exitTransitions(Post)}
+            ){
 
                 val sharedViewModel = it.sharedViewModel<SharedViewModel>(navController)
                 val sharedState by sharedViewModel.state.collectAsState()
@@ -154,4 +184,16 @@ inline fun <reified T: ViewModel> NavBackStackEntry.sharedViewModel(navControlle
     }
 
     return hiltViewModel(parentEntry)
+}
+
+
+enum class NavRoutes(val route: String){
+
+    MainNav("MainNavigation"),
+    AuthNav("AuthNavigation"),
+    SignIn("SignInRoute"),
+    SignUp("SignUpRoute"),
+    Feed("FeedRoute"),
+    Profile("ProfileRoute"),
+    Post("PostRoute")
 }
