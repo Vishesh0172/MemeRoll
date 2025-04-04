@@ -33,7 +33,6 @@ class FeedViewModel @Inject constructor(
 
     init {
 
-        Log.d("FeedViewModel", "init called")
 
         viewModelScope.launch {
 

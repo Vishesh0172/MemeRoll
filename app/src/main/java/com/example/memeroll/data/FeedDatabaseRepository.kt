@@ -31,10 +31,10 @@ interface FeedDatabaseRepository {
                     range(from = from, to = from)
 
                 }.decodeList<MemeDTO>()
-                Log.d("MemeList", list.toString())
+
                 list
             } catch (e: Exception) {
-                Log.d("FeedRepository", "Exception: $e")
+                Log.d("FeedRepository", "Couldn't get meme: $e")
                 null
             }
         }
@@ -54,7 +54,7 @@ interface FeedDatabaseRepository {
 
         override suspend fun likeMeme(postId: Int) {
 
-            Log.d("FeedRepository", "$postId")
+
             try {
                 val meme = getMemeById(postId) ?: throw NullPointerException()
                 database.from("feed_table").update(
@@ -67,12 +67,12 @@ interface FeedDatabaseRepository {
                     }
                 }
             } catch (e: Exception) {
-                Log.d("FeedRepository", "Couldn't Like Post: $e")
+                Log.d("FeedRepository", "Couldn't like meme: $e")
             }
         }
 
         override suspend fun unlikeMeme(postId: Int) {
-            Log.d("FeedRepository", "$postId")
+
             try {
                 val meme = getMemeById(postId) ?: throw NullPointerException()
                 database.from("feed_table").update(
@@ -94,7 +94,7 @@ interface FeedDatabaseRepository {
                 val postId = database.from("feed_table").insert(meme) {
                     select(columns = Columns.list("id"))
                 }.decodeSingle<Map<String, Int>>().values.first()
-                Log.d("FeedRepository", "Added to Feed")
+
                 postId
             } catch (e: Exception) {
                 Log.d("FeedRepository", "Couldn't Add to Feed: $e")

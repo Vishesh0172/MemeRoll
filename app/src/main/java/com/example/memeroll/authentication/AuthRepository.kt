@@ -27,7 +27,6 @@ class AuthRepositoryImpl @Inject constructor(
                 this.email = email
                 this.password = password
             }
-            Log.d("Authentication", "Sign In return true")
             true
         }catch (e: Exception){
             Log.d("Authentication", "Sign In Exception: $e")
@@ -37,7 +36,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun signUp(email: String, password: String, name: String): Boolean {
-        Log.d("Authentication", "Sign Up function called")
+
         return try {
             auth.signUpWith(Email) {
                 this.email = email
@@ -46,7 +45,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             true
         } catch (e: Exception) {
-            Log.d("Authentication", "Sign Up Exception: $e")
+            Log.d("AuthRepository", "Couldn't Sign Up: $e")
             false
         }
     }
@@ -58,12 +57,12 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun signOut(){
-        Log.d("Authentication", "signOut function called")
+
         return try {
             auth.signOut()
 
         }catch (e: Exception){
-            Log.d("Authentication", "Sign Out Exception: $e")
+            Log.d("AuthRepository", "Couldn't Sign Out: $e")
             Unit
         }
     }
